@@ -1,6 +1,6 @@
 
 
-all: \
+all: sqlite \
 	data/bahamas_leaks.ijson \
 	data/offshore_leaks.ijson \
 	data/panama_papers.ijson \
@@ -33,3 +33,9 @@ data/paradise_papers.zip:
 
 %.ijson: %.sqlite
 	python make_entities.py $*.sqlite $@
+
+clean-entities:
+	rm -f data/*.ijson
+
+clean: clean-entities
+	rm -rf data/*.sqlite

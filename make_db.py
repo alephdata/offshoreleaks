@@ -14,7 +14,7 @@ def load_table(db, name, fh):
     print("Loading %s -> %s..." % (name, table.name))
     fh = io.TextIOWrapper(fh)
     reader = DictReader(fh, delimiter=",", quotechar='"')
-    chunk = ChunkedInsert(table)
+    chunk = ChunkedInsert(table, chunksize=10000)
     for row in reader:
         row = {slugify(k, sep="_"): stringify(v) for (k, v) in row.items()}
         chunk.insert(row)

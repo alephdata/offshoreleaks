@@ -106,6 +106,8 @@ def write_edges(writer, db):
         proxy.add(proxy.schema.source_prop, source)
         proxy.add(proxy.schema.target_prop, target)
         proxy.add("role", link)
+        if link is None:
+            proxy.add("role", type_)
         writer.put(proxy)
 
         if i % 10000 == 0:
