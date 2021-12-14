@@ -1,108 +1,119 @@
 import click
 import dataset
 from datetime import datetime
-from ftmstore import Dataset
+import ftmstore
+# from ftmstore import Dataset
 from followthemoney import model
 from followthemoney.cli.util import write_object
 from sqlalchemy.exc import OperationalError
 
-IGNORE_EDGE_TYPES = ["registered_address", "same_name_as", "same_address_as"]
-SAME_AS = ["same_intermediary_as", "same_company_as", "same_as"]
-OWNER_EDGES = [
+IGNORE_INTERVAL_TYPES = [
+    "registered_address",
+    "same_address_as",
+    "same_company_as",
+    "similar_company_as",
+    "same_intermediary_as",
+    "probably_same_officer_as",
+    "similar",
+    "same_name_as", 
+    "same_company_as", 
+    "same_as",
+    "same_id_as"
+]
+
+REPRESENTATION_INTERVALS = [
+    "underlying",
+    "intermediary_of",
+    "connected_to"
+]
+
+OWNERSHIP = [
+    "benef",
     "owner",
-    "beneficial",
-    "shareholder",
-    "beneficiary",
-    "founder",
-    "settlor",
+    "ubo",
+    "investor",
+    "shareholder"   
 ]
-DIRECTOR_EDGES = [
+
+DIRECTORSHIP = [
     "director",
-    "secretary",
-    "president",
-    "member",
-    "signatory",
-    "protector",
-    "executive",
-    "chairman",
-    "partner",
-    "leader",
-    "treasurer",
-    "administrator",
-    "trustee",
-    "nominated person",
-    "chief financial officer",
-]
-MEMBER_EDGES = [
-    "manager",
-    "business man",
-    "representative",
-    "dean",
-    "financial officer",
+    "secret",
+    "treas",
+    "pres",
+    "vice",
+    "chair",
+    "power",
+    "poa",
+    "exec",
+    "assist",
+    "chief",
+    "officer"
 ]
 
 
 def make_node_entity(node_id, schema="LegalEntity"):
     proxy = model.make_entity(schema)
     proxy.id = "icij-%s" % node_id
-    return proxy
-
+    return(proxy)
 
 def parse_date(text):
     if text is None:
-        return
+        return("")
     try:
-        return datetime.strptime(text, "%d-%b-%Y")
+        return(datetime.strptime(text, "%d-%b-%Y"))
     except ValueError:
-        return text
-
+        return(text)
 
 def parse_countries(text):
     if text is not None:
-        return text.split(";")
+        return(text.split(","))
 
-
-def edge_schema(type_, link):
-    link = link or type_
+def define_officer(link):
     link = link.lower()
-    for term in OWNER_EDGES:
-        if term in link:
-            return "Ownership"
-    for term in DIRECTOR_EDGES:
-        if term in link:
-            return "Directorship"
-    for term in MEMBER_EDGES:
-        if term in link:
-            return "Membership"
-    return "UnknownLink"
+    if any(x in link for x in OWNERSHIP):
+        return("Ownership")
+    elif any(x in link for x in DIRECTORSHIP):
+        return("Directorship")
+    else:
+        return("Representation")
 
+def interv_schema(type_, link):
+    # link = link or type_
+    link = link.lower()
+    if "officer" in type_:
+        officer = define_officer(link)
+        return(officer)
+    for term in REPRESENTATION_INTERVALS:
+        if term in type_:
+            return("Representation")
+    return("UnknownLink")
 
-def write_edges(writer, db):
-    for i, edge in enumerate(db["edges"], 1):
-        source_id = edge.pop("start_id", None)
-        source_id = edge.pop("node_1", source_id)
+def write_intervalls(writer, db):
+    for i, interv in enumerate(db.load_table("relationships"), 1):
+        source_id = interv.pop("start", None)
+        # source_id = interv.pop("node_1", source_id)
         source = make_node_entity(source_id)
-        target_id = edge.pop("end_id", None)
-        target_id = edge.pop("node_2", target_id)
+        target_id = interv.pop("end", None)
+        # target_id = interv.pop("node_2", target_id)
         target = make_node_entity(target_id)
-        type_ = edge.pop("rel_type", None)
-        type_ = edge.pop("type", type_)
-        link = edge.pop("link", None)
-        if type_ in IGNORE_EDGE_TYPES:
+        # type_ = interv.pop("rel_type", None)
+        type_ = interv.pop("type", None)
+        link = interv.pop("link", None)
+        if type_ in IGNORE_INTERVAL_TYPES:
             continue
-        if type_ in SAME_AS:
-            source.add("sameAs", target)
-            writer.put(source, fragment=target.id)
-            target.add("sameAs", source)
-            writer.put(target, fragment=source.id)
-            continue
-        schema = edge_schema(type_, link)
-        # print(type_, link, schema)
+        # if type_ in SAME_AS:
+        #     source.add("sameAs", target)
+        #     writer.put(source, fragment=target.id)
+        #     target.add("sameAs", source)
+        #     writer.put(target, fragment=source.id)
+        #     continue
+        schema = interv_schema(type_, link)
+        #   print(type_, link, schema)
         proxy = model.make_entity(schema)
         proxy.make_id(source_id, target_id, type_, link)
-        proxy.add("startDate", parse_date(edge.pop("start_date", None)))
-        proxy.add("endDate", parse_date(edge.pop("end_date", None)))
-        proxy.add("summary", edge.pop("valid_until", None))
+        proxy.add("startDate", parse_date(interv.pop("start_date", None)))
+        proxy.add("endDate", parse_date(interv.pop("end_date", None)))
+        proxy.add("summary", interv.pop("valid_until", None))
         proxy.add(proxy.schema.source_prop, source)
         proxy.add(proxy.schema.target_prop, target)
         proxy.add("role", link)
@@ -111,13 +122,15 @@ def write_edges(writer, db):
         writer.put(proxy)
 
         if i % 10000 == 0:
-            print("edges: %s" % i)
+            print("interval: %s" % i)
 
 
 def make_row_entity(row, schema):
     node_id = row.pop("node_id", None)
     proxy = make_node_entity(node_id, schema)
     proxy.add("name", row.pop("name", None))
+    proxy.add("previousName", row.pop("former_name", None))
+    proxy.add("weakAlias", row.pop("original_name", None))
     proxy.add("icijId", node_id)
     proxy.add("legalForm", row.pop("company_type", None))
     date = parse_date(row.pop("incorporation_date", None))
@@ -139,18 +152,19 @@ def make_row_entity(row, schema):
     proxy.add("country", countries)
     countries = parse_countries(row.pop("countries", None))
     proxy.add("country", countries)
-    proxy.add("registrationNumber", row.pop("ibcruc", None))
     proxy.add("program", row.pop("service_provider", None))
 
+    if schema == 'Company':
+        proxy.add("ibcRuc", row.pop("ibcruc", None))
+
+    row.pop("internal_id", None)
     row.pop("id", None)
-    row.pop("type", None)
-    row.pop("labels_n", None)
-    row.pop("closed_date", None)
+    row.pop("dorm_date", None)
 
     if len(row):
-        print(row)
+        print('info not used:', row)
 
-    return proxy
+    return(proxy)
 
 
 def write_nodes(writer, table, schema="LegalEntity"):
@@ -171,45 +185,44 @@ def _write_addresses(writer, db, query):
         proxy.add("country", countries)
         if i % 10000 == 0:
             print("adj address: %s" % i)
-        writer.put(proxy, fragment=row.get("edge_id"))
+        writer.put(proxy, fragment=row.get("interv_id"))
     writer.flush()
 
 
 def write_addresses(writer, db):
     try:
         query = """
-            SELECT e.id AS edge_id, e.start_id AS entity_id,
-                a.address AS address, a.country_codes AS country_codes
-            FROM edges e JOIN address a
-                ON e.end_id = a.node_id;
+            SELECT
+                e.id AS interv_id,
+                start AS entity_id,
+                address,
+                country_codes
+            FROM
+                relationships e
+                JOIN "nodes-addresses" a ON e.end = a.node_id;
         """
         _write_addresses(writer, db, query)
-    except OperationalError:
-        query = """
-            SELECT e.id AS edge_id, e.node_1 AS entity_id,
-                a.address AS address, a.country_codes AS country_codes
-            FROM edges e JOIN address a
-                ON e.node_2 = a.node_id;
-        """
-        _write_addresses(writer, db, query)
-
+    except Exception as e:
+        print(e)
 
 @click.command()
 @click.argument("db_path", type=click.Path(exists=True))
 @click.argument("outfile", type=click.File(mode="w"))
 def make_entities(db_path, outfile):
     db = dataset.connect("sqlite:///%s" % db_path)
-    store = Dataset("temp", database_uri="sqlite://")
+    store = ftmstore.get_dataset("temp", database_uri="sqlite://")
     writer = store.bulk()
-    write_edges(writer, db)
+    write_intervalls(writer, db)
     write_addresses(writer, db)
-    write_nodes(writer, db["entity"], "Company")
-    write_nodes(writer, db["intermediary"])
-    write_nodes(writer, db["officer"])
+    write_nodes(writer, db["node-entities"], "Company")
+    write_nodes(writer, db["node-intermediary"])
+    write_nodes(writer, db["node-officer"])
+    write_nodes(writer, db.load_table("nodes-entities"), "Company")
+    write_nodes(writer, db.load_table("nodes-intermediaries"))
+    write_nodes(writer, db.load_table("nodes-officers"))
 
     for entity in store.iterate():
         write_object(outfile, entity)
-
 
 if __name__ == "__main__":
     make_entities()
