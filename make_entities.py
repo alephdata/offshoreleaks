@@ -2,29 +2,28 @@ import click
 import dataset
 from datetime import datetime
 import ftmstore
-# from ftmstore import Dataset
 from followthemoney import model
 from followthemoney.cli.util import write_object
+from ftmstore import store
 from sqlalchemy.exc import OperationalError
 
-IGNORE_INTERVAL_TYPES = [
-    "registered_address",
-    "same_address_as",
-    "same_company_as",
-    "similar_company_as",
-    "same_intermediary_as",
-    "probably_same_officer_as",
-    "similar",
-    "same_name_as", 
-    "same_company_as", 
-    "same_as",
-    "same_id_as"
-]
 
 REPRESENTATION_INTERVALS = [
     "underlying",
     "intermediary_of",
     "connected_to"
+]
+
+IGNORE_INTERVALLS = [
+    "same_name_as",
+    "similar",
+    "same_as",
+    "same_id_as",
+    "same_address_as",
+    "same_company_as",
+    "similar_company_as",
+    "same_intermediary_as",
+    "probably_same_officer_as"
 ]
 
 OWNERSHIP = [
@@ -37,7 +36,7 @@ OWNERSHIP = [
 
 DIRECTORSHIP = [
     "director",
-    "secret",
+    "sec",
     "treas",
     "pres",
     "vice",
@@ -51,16 +50,16 @@ DIRECTORSHIP = [
 ]
 
 
-def make_node_entity(node_id, schema="LegalEntity"):
+def make_node_entity(id, schema="LegalEntity"):
     proxy = model.make_entity(schema)
-    proxy.id = "icij-%s" % node_id
+    proxy.id = id
     return(proxy)
 
 def parse_date(text):
     if text is None:
         return("")
     try:
-        return(datetime.strptime(text, "%d-%b-%Y"))
+        return(datetime.strptime(text, "%d-%m-%Y"))
     except ValueError:
         return(text)
 
@@ -78,8 +77,11 @@ def define_officer(link):
         return("Representation")
 
 def interv_schema(type_, link):
-    # link = link or type_
+    if not link:
+        print(type_, link)
+        link = type_
     link = link.lower()
+
     if "officer" in type_:
         officer = define_officer(link)
         return(officer)
@@ -91,34 +93,41 @@ def interv_schema(type_, link):
 def write_intervalls(writer, db):
     for i, interv in enumerate(db.load_table("relationships"), 1):
         source_id = interv.pop("start", None)
-        # source_id = interv.pop("node_1", source_id)
         source = make_node_entity(source_id)
         target_id = interv.pop("end", None)
-        # target_id = interv.pop("node_2", target_id)
         target = make_node_entity(target_id)
-        # type_ = interv.pop("rel_type", None)
         type_ = interv.pop("type", None)
         link = interv.pop("link", None)
-        if type_ in IGNORE_INTERVAL_TYPES:
+
+        if type_ in IGNORE_INTERVALLS:
             continue
-        # if type_ in SAME_AS:
-        #     source.add("sameAs", target)
-        #     writer.put(source, fragment=target.id)
-        #     target.add("sameAs", source)
-        #     writer.put(target, fragment=source.id)
-        #     continue
+
+        if not source_id or not target_id:
+            continue
+
         schema = interv_schema(type_, link)
-        #   print(type_, link, schema)
         proxy = model.make_entity(schema)
         proxy.make_id(source_id, target_id, type_, link)
         proxy.add("startDate", parse_date(interv.pop("start_date", None)))
         proxy.add("endDate", parse_date(interv.pop("end_date", None)))
         proxy.add("summary", interv.pop("valid_until", None))
-        proxy.add(proxy.schema.source_prop, source)
-        proxy.add(proxy.schema.target_prop, target)
         proxy.add("role", link)
         if link is None:
             proxy.add("role", type_)
+        
+        if schema == "Representation":
+            proxy.add('agent', source)
+            proxy.add('client', target)
+        elif schema == "Directorship":
+            proxy.add('director', source)
+            proxy.add('organization', target)
+        elif schema == "Ownership":
+            proxy.add('owner', source)
+            proxy.add('asset', target)
+        else:
+            proxy.add('subject', source)
+            proxy.add('object', target)
+
         writer.put(proxy)
 
         if i % 10000 == 0:
@@ -126,12 +135,12 @@ def write_intervalls(writer, db):
 
 
 def make_row_entity(row, schema):
-    node_id = row.pop("node_id", None)
-    proxy = make_node_entity(node_id, schema)
+    id = row.pop("id", None)
+    proxy = make_node_entity(id, schema)
     proxy.add("name", row.pop("name", None))
     proxy.add("previousName", row.pop("former_name", None))
     proxy.add("weakAlias", row.pop("original_name", None))
-    proxy.add("icijId", node_id)
+    proxy.add("icijId", row.pop("node_id", None))
     proxy.add("legalForm", row.pop("company_type", None))
     date = parse_date(row.pop("incorporation_date", None))
     proxy.add("incorporationDate", date)
@@ -158,7 +167,6 @@ def make_row_entity(row, schema):
         proxy.add("ibcRuc", row.pop("ibcruc", None))
 
     row.pop("internal_id", None)
-    row.pop("id", None)
     row.pop("dorm_date", None)
 
     if len(row):
@@ -169,41 +177,28 @@ def make_row_entity(row, schema):
 
 def write_nodes(writer, table, schema="LegalEntity"):
     for i, row in enumerate(table, 1):
-        node_id = row.get("node_id")
+        id = row.get("id")
         proxy = make_row_entity(row, schema)
         if i % 10000 == 0:
             print("%s: %s" % (table.name, i))
-        writer.put(proxy, fragment=node_id)
+        writer.put(proxy, fragment=id)
     writer.flush()
 
-
-def _write_addresses(writer, db, query):
-    for i, row in enumerate(db.query(query), 1):
-        proxy = make_node_entity(row.get("entity_id"))
-        proxy.add("address", row.get("address"))
+def write_addresses(writer, table):
+    schema = "Address"
+    for i, row in enumerate(table, 1):
+        id = row.get("id")
+        proxy = make_node_entity(id, schema)
+        proxy.add("full", row.get("address"))
         countries = parse_countries(row.get("country_codes"))
         proxy.add("country", countries)
+        proxy.add("summary", row.pop("valid_until", None))
+        proxy.add("publisher", row.pop("sourceid", None))
         if i % 10000 == 0:
-            print("adj address: %s" % i)
-        writer.put(proxy, fragment=row.get("interv_id"))
+            print("%s: %s" % (table.name, i))
+        writer.put(proxy, fragment=id)
     writer.flush()
 
-
-def write_addresses(writer, db):
-    try:
-        query = """
-            SELECT
-                e.id AS interv_id,
-                start AS entity_id,
-                address,
-                country_codes
-            FROM
-                relationships e
-                JOIN "nodes-addresses" a ON e.end = a.node_id;
-        """
-        _write_addresses(writer, db, query)
-    except Exception as e:
-        print(e)
 
 @click.command()
 @click.argument("db_path", type=click.Path(exists=True))
@@ -212,17 +207,13 @@ def make_entities(db_path, outfile):
     db = dataset.connect("sqlite:///%s" % db_path)
     store = ftmstore.get_dataset("temp", database_uri="sqlite://")
     writer = store.bulk()
-    write_intervalls(writer, db)
-    write_addresses(writer, db)
-    write_nodes(writer, db["node-entities"], "Company")
-    write_nodes(writer, db["node-intermediary"])
-    write_nodes(writer, db["node-officer"])
     write_nodes(writer, db.load_table("nodes-entities"), "Company")
     write_nodes(writer, db.load_table("nodes-intermediaries"))
     write_nodes(writer, db.load_table("nodes-officers"))
-
+    write_nodes(writer, db.load_table("nodes-others"))
+    write_addresses(writer, db.load_table("nodes-addresses"))
+    write_intervalls(writer, db)
     for entity in store.iterate():
         write_object(outfile, entity)
-
 if __name__ == "__main__":
     make_entities()

@@ -8,7 +8,6 @@ from dataset.chunked import ChunkedInsert
 
 
 def load_table(db, name, fh):
-    # print('--->', db, name, fh)
     section, _ = name.rsplit(".")
     table = db[section]
     table.drop()
