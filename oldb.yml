@@ -1,0 +1,109 @@
+relationships:
+  options:
+    - match: registered_address
+      prop: addressEntity
+    - match: officer_of
+      schema: Directorship
+      start: director
+      end: organization
+      link: role
+      status: status
+    - match: intermediary_of
+      schema: Representation
+      start: agent
+      end: client
+      link: role
+      status: status
+    - match:
+        - underlying
+        - connected_to
+      schema: UnknownLink
+      start: subject
+      end: object
+      link: role
+      status: status
+    - match:
+        - same_name_as
+        - similar
+        - same_as
+        - same_id_as
+        - same_address_as
+        - same_company_as
+        - similar_company_as
+        - same_intermediary_as
+        - probably_same_officer_as
+
+dates:
+  options:
+    - match: 18/19/2015
+      value: "2015"
+    - match: 09-18-2004
+      value: 2004-09-18
+    - match: 04/27/05
+      value: 2005-04-27
+    - match: 16/20/2013
+      value: "2013"
+    - match: "05152015"
+      value: "2015-05-15"
+    - match: "01.004.04"
+      value: "2004"
+    - match: "26/08-2010"
+      value: "2010-08-26"
+    - match: "29/02/2006"
+      value: "2006-02"
+    - match: 5/21/14
+      value: "2014-05-21"
+    - match: 4/25/14
+      value: "2014-04-25"
+    - match: "1212012"
+      value: "2012"
+    - match: "06/01.2009"
+      value: "2009-01-06"
+    - match: "25090015"
+      value: null
+    - match: "28/02/201"
+      value: null
+    - match: "28.02/2014"
+      value: "2014-02-28"
+    - match: "1/15/15"
+      value: null
+    - match: "10-6-14"
+      value: "2014-06-10"
+    - match: "27-6-14"
+      value: "2014-06-27"
+    - match: "31/02/2013"
+      value: "2013-02"
+    - match: "05/26/14"
+      value: "2014-05-26"
+    - match: "12-112013"
+      value: "2013"
+    - match: "08/11/204"
+      value: null
+    - match: "284/2015"
+      value: 2015-04-28
+
+countries:
+  options:
+    - match:
+        - Undetermined
+        - Not identified
+        - 'Recorded in leaked files as "fund"'
+        - XXX
+        - "null"
+        # now three countries, can't identify which:
+        - Netherlands Antilles
+      value: null
+    - match: Cayman
+      value: Cayman Islands
+    - match: Sint Eustatius and Saba Bonaire
+      value: BQ
+
+    - match: State of Delaware
+      value: United States of America
+    - match: Province of China Taiwan
+      value: Taiwan
+    - match: The Democratic Republic of the Congo
+      value: DR Congo
+    - match:
+        - Labuan
+      value: Malaysia
