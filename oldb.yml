@@ -1,37 +1,311 @@
 relationships:
+  lowercase: true
   options:
-    - match: registered_address
+    - match:
+        - registered address
+      contains:
+        - registered office
+        - business address
+        - residential address
+        - alternative register address
+        - mailing address
+        - correspondent addr
+        - correspondance address
+        - administration address
+        - principal office
+        - administration address
+        - correspondance address
       prop: addressEntity
-    - match: officer_of
+    - contains:
+        - board-member
+        - chairman of
+        # - alternate director
+        - director of
+        - treasurer
+        - foundation council
+        - secretary
+        - president
+        - nominee name of
+        - Protector of
+        - Nominee Trust Settlor of
+        - Nominee Investment Advisor of
+        - trust settlor of
+        - board representative of
+        - nominated person of
+        - director / chief investment officer
+        - class a director
+        - authorised person / signatory of
+        - bank signatory of
+        - officer of
+        - managing director
+        - director/proxy of
+        - board member
+        - director / manager of
+        - managing director
+        - chairman
+        - chairwoman
+        - chief executive officer
+        - "director -"
+        - party leader
+        - proxy
+      match:
+        - director
+        - permanent director
+        - supervisory director b of
+        - lid van het college van bestuur of
+        - fund administrator of
+        - ceo
+        - authorized signatory of
+        - party leader
+        - trustee of
+        - legal advisor of
+        - auth. representative of
+        - joint settlor of
+        - appointor of
+        - investment advisor of
+        - personal directorship of
+        - power of attorney of
+        - signatory of
+        - sole signatory of
+        - director (rami makhlouf) of
+        - officer
+        - dir. / sec. / treasure
+        - director / manager
+        - executive
+        - anderson
+        - diretor
+        - alternate director
+        - v.p. / treas. / director
+        - director / asst. sec
+        - authorized signatory
+        - pres / sec / director
+        - general manager
+        - financial controller
+        - sole director
+        - member
+        - company executive
+        - assistant director
+        - class b director
+        - director / v.p.
+        - company / director
+        - sole director / sec.
+        - director / treas / sec
+        - director / pres / 01
+        - vp / treas. asst sec
+        - resigned
+        - pres / dir. / sec. / tres.
+        - investment advisor
+        - controller
+        - assistant controller
+        - director / vp / secretar
+        - director / sec
+        - alt director
+        - corp. director
+        - pres / ch.invest.of / di
+        - v.p / / senior trader
+        - attorney in fact
+        - director / c.e.o
+        - deputy ch. / c.e.o
+        - banker
+        - dir / pres / treas
+        - director / officer
+        - director / pres. / secr.
+        - as. sec. / as. treas.
+        - 1st v.p. / director
+        - businessman
+        - corporation
+        - director / c.o.o.
+        - dipl. ing.
+        - subscriber
+        - director / mgn. dir.
+        - ibc
+        - authorized
+        - dr. norbert marxer
+        - c.e.o
+        - executive officer
+        - chief exec. officer
+        - manager-corporate
+        - chief fin. officer
+        - dir. and sec.
+        - non
+        - corporate director
+        - businesswoman
+        - attorney at law
+        - director / v.pres. / sec
+        - c.e.o. / pres. / dir.
+        - director / cob
+        - presid / treas / dir
+        - executive director
+        - non executive direct
+        - chief financial off
+        - dir / pres / treas / sec
+        - director / assist sec
+        - independent director
+        - dir / pres / sec / tre
+        - dir. / v. p. / a.s.
+        - dir. / chrm. / vp / a.s.
+        - asst treas / director
+        - tur limited
+        - mng. director / china
+        - first director
+        - chief executive off
+        - direc / secr. / treas.
+        - pres. / dir. / sec.
+        - mr /
+        - dir. v. pres. / tre
+        - special director
+        - c.f.o.
+        - treas. / director
+        - director / c.f.o.
+        - vp / c.e.o.
+        - dir. / vp / sec
+        - pres / v.p.
+        - director / ass. sec.
+        - director / pres / treas
+        - sec / treas
+        - t.c.
+        - cramlington
+        - director / c.e.o / pres.
+        - sec
+        - dir / pres / vp / trea / sec
+        - advisor to the board
+        - pres. / ch.exec. / dir.
+        - to gary lane
+        - co.
+        - clementi limited
+        - gfs
+        - ind. non-exec. dir.
+        - bruno a. roberts
+        - alt. dir to ian fair
+        - administrator of
+        - settlor of
+        - investment manager of
+        - enforcer of
+        - appointer of
+        - authorised signatory of
+        - fund manager of
+        - member of the board of directors
+        - client contact of
+        - related party of
+        - director b of
+        - senior director; techmical operations of
+        - liquidator
+        - legal representative
+        - judicial representative
+        - is signatory for
+        - supervisory director/commissioner of
+        - liquidator of
+        - manager of
+        - member of the supervisory board of
+        - director w/t general manager of
+        - member credit committee of
+        - director/vocal of
+        - member of the board of directors of
+        - supervisory director with restricted vote of
+        - business executive of
+        - legal representative of
+        - local representative of
+        - ordinary director
+        - asst. controller
       schema: Directorship
       start: director
       end: organization
       link: role
       status: status
-    - match: intermediary_of
+    - contains:
+        - beneficiary of
+        - shareholder of
+        - owner of
+        - Beneficial Owner
+        - partner of
+        - founder
+      match:
+        - director i of
+        - director e of
+        - subscriber of
+        - shareholder
+        - shareholder (through julex foundation) of
+        - owner
+        - investor
+        - trustee of trust of
+        - co-trustee of trust of
+        - resident trustee of
+        - co-trustee of
+        - co-trustee of trust of
+      schema: Ownership
+      start: owner
+      end: asset
+      link: role
+      status: status
+    - match:
+        - intermediary of
+        - power of Attorney
+        - tax advisor of
+        - stockbroker of
+        - unit trust register of
+        - records & registers of
+        - attorney of
+        - attorney at law of
+        - alternate manager of
+        - representative of
+        - business man of
+        - operations manager of
+        - messenger of
+        - engineer of
+        - vice dean of
+        - dean of
+        - general accountant of
+        - general counsel
+        - chartered accountant
+        - appleby assigned attorney
+        - auditor
+        - accountant
+        - intermediary / eligible introducer of
+        - registered agent of
+        - registrar and transfer agent of
+        - registered agent
+      contains:
+        - judicial representative of
       schema: Representation
       start: agent
       end: client
       link: role
       status: status
-    - match:
+    - contains:
         - underlying
-        - connected_to
+        - connected to
+        - auditor of
+        - safekeeping of
+        - custodian of
+        - grantee of a mortgage of
+        - connected of
+      match:
+        - company
       schema: UnknownLink
       start: subject
       end: object
       link: role
       status: status
     - match:
+        - same name as
         - same_name_as
         - similar
-        - same_as
-        - same_id_as
-        - same_address_as
-        - same_company_as
-        - similar_company_as
-        - same_intermediary_as
-        - probably_same_officer_as
+        - same as
+        - same id as
+        - same address as
+        - same company as
+        - similar company as
+        - same intermediary as
+        - probably same officer as
+        - same name and registration date as
+        - entity similar to
+        - related entity
+        - similar name and address as
+        - same name and registration date as
+        - similar name and address as
+        - null
+      contains:
+        - same name as
 
 dates:
   options:
@@ -97,7 +371,6 @@ countries:
       value: Cayman Islands
     - match: Sint Eustatius and Saba Bonaire
       value: BQ
-
     - match: State of Delaware
       value: United States of America
     - match: Province of China Taiwan

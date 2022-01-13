@@ -3,7 +3,6 @@ import yaml
 import click
 import logging
 from typing import Dict
-from pprint import pprint
 from csv import DictReader
 from functools import cache
 from zipfile import ZipFile
@@ -90,6 +89,13 @@ def audit_row(row):
 def emit_entity(proxy: EntityProxy):
     assert proxy.id is not None, proxy
     if proxy.id in ENTITIES:
+
+        schemata = [proxy.schema.name, ENTITIES[proxy.id].schema.name]
+        if sorted(schemata) == sorted(["Asset", "Organization"]):
+            proxy.schema = model.get("Company")
+        if sorted(schemata) == sorted(["Asset", "LegalEntity"]):
+            proxy.schema = model.get("Company")
+
         proxy = ENTITIES[proxy.id].merge(proxy)
     ENTITIES[proxy.id] = proxy
 
@@ -196,7 +202,12 @@ def make_row_address(row):
     emit_entity(proxy)
 
 
+LINK_SEEN = set()
+
+
 def make_row_relationship(row):
+    # print(row)
+    # return
     _type = row.pop("_type")
     _start = row.pop("_start")
     start = make_entity_id(_start)
@@ -204,8 +215,16 @@ def make_row_relationship(row):
     link = row.pop("link", None)
     source_id = row.pop("sourceID", None)
     end = make_entity_id(_end)
-    res = lookup("relationships", _type)
+    try:
+        res = lookup("relationships", link)
+    except Exception as exc:
+        print((exc.message, exc.value))
+        return
+
     if res is None:
+        if link not in LINK_SEEN:
+            # log.warning("Unknown link type: %s (%s, %s)", link, _type, row)
+            LINK_SEEN.add(link)
         return
 
     if res.prop is not None:
@@ -220,7 +239,7 @@ def make_row_relationship(row):
         end_date = parse_date(row.pop("end_date"))
 
         rel = model.make_entity(res.schema)
-        rel_id = slugify(f"{start}-{end}-{_type}")
+        rel_id = slugify(f"{_start}-{_end}-{link}")
         rel.id = make_entity_id(rel_id)
         rel.add("startDate", start_date)
         rel.add("endDate", end_date)
@@ -249,31 +268,31 @@ def make_row_relationship(row):
 def make_db(zip_file, out_file):
     logging.basicConfig(level=logging.INFO)
     with ZipFile(zip_file, "r") as zip:
-        log.info("Loading: nodes-entities.csv...")
-        for row in read_rows(zip, "nodes-entities.csv"):
-            make_row_entity(row, "Company")
+        # log.info("Loading: nodes-entities.csv...")
+        # for row in read_rows(zip, "nodes-entities.csv"):
+        #     make_row_entity(row, "Company")
 
-        log.info("Loading: nodes-officers.csv...")
-        for row in read_rows(zip, "nodes-officers.csv"):
-            make_row_entity(row, "LegalEntity")
+        # log.info("Loading: nodes-officers.csv...")
+        # for row in read_rows(zip, "nodes-officers.csv"):
+        #     make_row_entity(row, "LegalEntity")
 
-        log.info("Loading: nodes-intermediaries.csv...")
-        for row in read_rows(zip, "nodes-intermediaries.csv"):
-            make_row_entity(row, "LegalEntity")
+        # log.info("Loading: nodes-intermediaries.csv...")
+        # for row in read_rows(zip, "nodes-intermediaries.csv"):
+        #     make_row_entity(row, "LegalEntity")
 
-        log.info("Loading: nodes-others.csv...")
-        for row in read_rows(zip, "nodes-others.csv"):
-            make_row_entity(row, "LegalEntity")
+        # log.info("Loading: nodes-others.csv...")
+        # for row in read_rows(zip, "nodes-others.csv"):
+        #     make_row_entity(row, "LegalEntity")
 
-        log.info("Loading: nodes-addresses.csv...")
-        for row in read_rows(zip, "nodes-addresses.csv"):
-            make_row_address(row)
+        # log.info("Loading: nodes-addresses.csv...")
+        # for row in read_rows(zip, "nodes-addresses.csv"):
+        #     make_row_address(row)
 
         log.info("Loading: relationships.csv...")
         for row in read_rows(zip, "relationships.csv"):
             make_row_relationship(row)
 
-    dump_entities(out_file)
+    # dump_entities(out_file)
 
 
 if __name__ == "__main__":
