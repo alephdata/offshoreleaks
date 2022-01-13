@@ -268,31 +268,31 @@ def make_row_relationship(row):
 def make_db(zip_file, out_file):
     logging.basicConfig(level=logging.INFO)
     with ZipFile(zip_file, "r") as zip:
-        # log.info("Loading: nodes-entities.csv...")
-        # for row in read_rows(zip, "nodes-entities.csv"):
-        #     make_row_entity(row, "Company")
+        log.info("Loading: nodes-entities.csv...")
+        for row in read_rows(zip, "nodes-entities.csv"):
+            make_row_entity(row, "Company")
 
-        # log.info("Loading: nodes-officers.csv...")
-        # for row in read_rows(zip, "nodes-officers.csv"):
-        #     make_row_entity(row, "LegalEntity")
+        log.info("Loading: nodes-officers.csv...")
+        for row in read_rows(zip, "nodes-officers.csv"):
+            make_row_entity(row, "LegalEntity")
 
-        # log.info("Loading: nodes-intermediaries.csv...")
-        # for row in read_rows(zip, "nodes-intermediaries.csv"):
-        #     make_row_entity(row, "LegalEntity")
+        log.info("Loading: nodes-intermediaries.csv...")
+        for row in read_rows(zip, "nodes-intermediaries.csv"):
+            make_row_entity(row, "LegalEntity")
 
-        # log.info("Loading: nodes-others.csv...")
-        # for row in read_rows(zip, "nodes-others.csv"):
-        #     make_row_entity(row, "LegalEntity")
+        log.info("Loading: nodes-others.csv...")
+        for row in read_rows(zip, "nodes-others.csv"):
+            make_row_entity(row, "LegalEntity")
 
-        # log.info("Loading: nodes-addresses.csv...")
-        # for row in read_rows(zip, "nodes-addresses.csv"):
-        #     make_row_address(row)
+        log.info("Loading: nodes-addresses.csv...")
+        for row in read_rows(zip, "nodes-addresses.csv"):
+            make_row_address(row)
 
         log.info("Loading: relationships.csv...")
         for row in read_rows(zip, "relationships.csv"):
             make_row_relationship(row)
 
-    # dump_entities(out_file)
+    dump_entities(out_file)
 
 
 if __name__ == "__main__":
