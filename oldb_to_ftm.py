@@ -140,6 +140,9 @@ def make_row_entity(row, schema):
     date = parse_date(row.pop("struck_off_date", None))
     proxy.add("dissolutionDate", date)
 
+    if proxy.schema.is_a("Organization"):
+        proxy.add("topics", "corp.offshore")
+
     closed_date = parse_date(row.pop("closed_date", None))
     if proxy.has("dissolutionDate"):
         log.warning("Company has both dissolution date and closed date: %r", proxy)
