@@ -1,41 +1,14 @@
+full: data/full-oldb.ijson
 
-
-all: sqlite \
-	data/bahamas_leaks.ijson \
-	data/offshore_leaks.ijson \
-	data/panama_papers.ijson \
-	data/paradise_papers.ijson
-
-sqlite: \
-	data/bahamas_leaks.sqlite \
-	data/offshore_leaks.sqlite \
-	data/panama_papers.sqlite \
-	data/paradise_papers.sqlite
-
-data/bahamas_leaks.zip:
+data/full-oldb.zip:
 	mkdir -p data/
-	wget -q -c -O data/bahamas_leaks.zip https://offshoreleaks-data.icij.org/offshoreleaks/csv/csv_bahamas_leaks.2017-12-19.zip
+	wget -q -c -O data/full-oldb.zip https://offshoreleaks-data.icij.org/offshoreleaks/csv/full-oldb-20211202.zip
 
-data/offshore_leaks.zip:
-	mkdir -p data/
-	wget -q -c -O data/offshore_leaks.zip https://offshoreleaks-data.icij.org/offshoreleaks/csv/csv_offshore_leaks.2018-02-14.zip
-
-data/panama_papers.zip:
-	mkdir -p data/
-	wget -q -c -O data/panama_papers.zip https://offshoreleaks-data.icij.org/offshoreleaks/csv/csv_panama_papers.2018-02-14.zip
-
-data/paradise_papers.zip:
-	mkdir -p data/
-	wget -q -c -O data/paradise_papers.zip https://offshoreleaks-data.icij.org/offshoreleaks/csv/csv_paradise_papers.2018-02-14.zip
-
-%.sqlite: %.zip
-	python make_db.py $*.zip $@
-
-%.ijson: %.sqlite
-	python make_entities.py $*.sqlite $@
+data/full-oldb.ijson: data/full-oldb.zip
+	python oldb_to_ftm.py data/full-oldb.zip data/full-oldb.ijson
 
 clean-entities:
-	rm -f data/*.ijson
+	rm -f data/full-oldb.ijson
 
 clean: clean-entities
-	rm -rf data/*.sqlite
+	rm -rf data/full-oldb.zip
